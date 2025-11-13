@@ -1,5 +1,7 @@
 "use client";
+
 import { useState } from "react";
+import { toast } from "sonner";
 import { mockStudents, mockCompanies } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,6 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Check, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,10 +23,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type StudentStatus = "pending" | "eligible" | "rejected";
+
 export default function EligibleStudents() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>(
     mockCompanies[0]?.id || ""
   );
+  const [studentStatuses, setStudentStatuses] = useState<
+    Record<string, StudentStatus>
+  >({});
 
   const selectedCompany = mockCompanies.find((c) => c.id === selectedCompanyId);
 
@@ -33,6 +42,28 @@ export default function EligibleStudents() {
           selectedCompany.eligibleBranches.includes(student.branch)
       )
     : [];
+
+  const handleStatusChange = (studentId: string, status: StudentStatus) => {
+    setStudentStatuses((prev) => ({
+      ...prev,
+      [`${selectedCompanyId}-${studentId}`]: status,
+    }));
+
+    const student = mockStudents.find((s) => s.id === studentId);
+    toast(
+      status === "eligible"
+        ? "✅ Student Marked Eligible"
+        : "❌ Student Marked Rejected",
+      {
+        description: `${student?.name} has been marked as ${status}.`,
+        duration: 3000,
+      }
+    );
+  };
+
+  const getStudentStatus = (studentId: string): StudentStatus => {
+    return studentStatuses[`${selectedCompanyId}-${studentId}`] || "pending";
+  };
 
   return (
     <div className="space-y-6">
@@ -105,26 +136,74 @@ export default function EligibleStudents() {
                       <TableHead>Branch</TableHead>
                       <TableHead className="text-center">Semester</TableHead>
                       <TableHead className="text-center">CGPA</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {eligibleStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">
-                          {student.name}
-                        </TableCell>
-                        <TableCell>{student.email}</TableCell>
-                        <TableCell>{student.branch}</TableCell>
-                        <TableCell className="text-center">
-                          {student.semester}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {student.cgpa}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {eligibleStudents.map((student) => {
+                      const status = getStudentStatus(student.id);
+                      return (
+                        <TableRow key={student.id}>
+                          <TableCell className="font-medium">
+                            {student.name}
+                          </TableCell>
+                          <TableCell>{student.email}</TableCell>
+                          <TableCell>{student.branch}</TableCell>
+                          <TableCell className="text-center">
+                            {student.semester}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {student.cgpa}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                status === "eligible"
+                                  ? "bg-green-100 text-green-800"
+                                  : status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                size="sm"
+                                variant={
+                                  status === "eligible" ? "default" : "outline"
+                                }
+                                onClick={() =>
+                                  handleStatusChange(student.id, "eligible")
+                                }
+                                disabled={status === "eligible"}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={
+                                  status === "rejected"
+                                    ? "destructive"
+                                    : "outline"
+                                }
+                                onClick={() =>
+                                  handleStatusChange(student.id, "rejected")
+                                }
+                                disabled={status === "rejected"}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

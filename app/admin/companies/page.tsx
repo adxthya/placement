@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 import { mockCompanies, Company } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Calendar, MapPin, Briefcase } from "lucide-react";
+import { Plus, Calendar, MapPin, Briefcase, Pencil } from "lucide-react";
+import { toast } from "sonner"; // ✅ using sonner
 
 const branches = [
   "Computer Science",
@@ -30,6 +30,7 @@ const branches = [
 export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>(mockCompanies);
   const [open, setOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     cgpaRequirement: "",
@@ -52,21 +53,60 @@ export default function Companies() {
     }));
   };
 
+  const handleEdit = (company: Company) => {
+    setEditingCompany(company);
+    setFormData({
+      name: company.name,
+      cgpaRequirement: company.cgpaRequirement.toString(),
+      interviewDate: company.interviewDate,
+      location: company.location,
+      package: company.package,
+      eligibleBranches: company.eligibleBranches,
+    });
+    setOpen(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newCompany: Company = {
-      id: Date.now().toString(),
-      name: formData.name,
-      cgpaRequirement: parseFloat(formData.cgpaRequirement),
-      interviewDate: formData.interviewDate,
-      location: formData.location,
-      package: formData.package,
-      eligibleBranches: formData.eligibleBranches,
-    };
+    if (editingCompany) {
+      const updatedCompany: Company = {
+        ...editingCompany,
+        name: formData.name,
+        cgpaRequirement: parseFloat(formData.cgpaRequirement),
+        interviewDate: formData.interviewDate,
+        location: formData.location,
+        package: formData.package,
+        eligibleBranches: formData.eligibleBranches,
+      };
 
-    setCompanies([...companies, newCompany]);
+      setCompanies((prev) =>
+        prev.map((c) => (c.id === editingCompany.id ? updatedCompany : c))
+      );
+
+      toast.success("Company Updated", {
+        description: `${updatedCompany.name} has been updated successfully.`,
+      });
+    } else {
+      const newCompany: Company = {
+        id: Date.now().toString(),
+        name: formData.name,
+        cgpaRequirement: parseFloat(formData.cgpaRequirement),
+        interviewDate: formData.interviewDate,
+        location: formData.location,
+        package: formData.package,
+        eligibleBranches: formData.eligibleBranches,
+      };
+
+      setCompanies((prev) => [...prev, newCompany]);
+
+      toast.success("Company Added", {
+        description: `${newCompany.name} has been added successfully.`,
+      });
+    }
+
     setOpen(false);
+    setEditingCompany(null);
     setFormData({
       name: "",
       cgpaRequirement: "",
@@ -74,10 +114,6 @@ export default function Companies() {
       location: "",
       package: "",
       eligibleBranches: [],
-    });
-
-    toast.success(`${newCompany.name} added successfully!`, {
-      description: "Company has been added to the list.",
     });
   };
 
@@ -92,10 +128,22 @@ export default function Companies() {
             Manage placement companies
           </p>
         </div>
-
         <Dialog
           open={open}
-          onOpenChange={setOpen}
+          onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) {
+              setEditingCompany(null);
+              setFormData({
+                name: "",
+                cgpaRequirement: "",
+                interviewDate: "",
+                location: "",
+                package: "",
+                eligibleBranches: [],
+              });
+            }
+          }}
         >
           <DialogTrigger asChild>
             <Button>
@@ -103,12 +151,12 @@ export default function Companies() {
               Add Company
             </Button>
           </DialogTrigger>
-
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add New Company</DialogTitle>
+              <DialogTitle>
+                {editingCompany ? "Edit Company" : "Add New Company"}
+              </DialogTitle>
             </DialogHeader>
-
             <form
               onSubmit={handleSubmit}
               className="space-y-4"
@@ -124,7 +172,6 @@ export default function Companies() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="cgpaRequirement">CGPA Requirement</Label>
                   <Input
@@ -139,7 +186,6 @@ export default function Companies() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="interviewDate">Interview Date</Label>
                   <Input
@@ -151,7 +197,6 @@ export default function Companies() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
                   <Input
@@ -162,7 +207,6 @@ export default function Companies() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="package">Package</Label>
                   <Input
@@ -200,7 +244,7 @@ export default function Companies() {
                 type="submit"
                 className="w-full"
               >
-                Add Company
+                {editingCompany ? "Update Company" : "Add Company"}
               </Button>
             </form>
           </DialogContent>
@@ -213,12 +257,20 @@ export default function Companies() {
             <CardHeader>
               <CardTitle className="flex items-start justify-between">
                 <span>{company.name}</span>
-                <span className="text-sm font-normal text-muted-foreground">
-                  Min CGPA: {company.cgpaRequirement}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Min CGPA: {company.cgpaRequirement}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(company)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardTitle>
             </CardHeader>
-
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
@@ -226,17 +278,14 @@ export default function Companies() {
                   {new Date(company.interviewDate).toLocaleDateString()}
                 </span>
               </div>
-
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>{company.location}</span>
               </div>
-
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Briefcase className="h-4 w-4" />
                 <span>{company.package}</span>
               </div>
-
               <div className="pt-2">
                 <p className="text-xs font-medium text-muted-foreground mb-2">
                   Eligible Branches:
