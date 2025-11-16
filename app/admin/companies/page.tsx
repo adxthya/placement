@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { mockCompanies, Company } from "@/data/mockData";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,24 +12,38 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Calendar, MapPin, Briefcase, Pencil } from "lucide-react";
+import {
+  Plus,
+  Calendar,
+  MapPin,
+  Briefcase,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { CompanyData } from "@/types/companyData";
+import {
+  saveCompanyData,
+  fetchAllCompaniesData,
+  deleteCompanyData,
+} from "@/actions/addStudentData";
 
 const branches = [
   "Computer Science",
-  "Information Technology",
   "Electrical Engineering",
-  "Mechanical Engineering",
   "Civil Engineering",
   "Electronics & Communication",
-  "Chemical Engineering",
+  "Bio Medical Engineering",
   "Biotechnology",
 ];
 
 export default function Companies() {
-  const [companies, setCompanies] = useState<Company[]>(mockCompanies);
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [open, setOpen] = useState(false);
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingCompany, setEditingCompany] = useState<CompanyData | null>(
+    null
+  );
   const [formData, setFormData] = useState({
     name: "",
     cgpaRequirement: "",
@@ -39,6 +52,23 @@ export default function Companies() {
     package: "",
     eligibleBranches: [] as string[],
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function loadCompanies() {
+      setIsLoading(true);
+      try {
+        const data = await fetchAllCompaniesData();
+        setCompanies(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load companies");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadCompanies();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -53,7 +83,7 @@ export default function Companies() {
     }));
   };
 
-  const handleEdit = (company: Company) => {
+  const handleEdit = (company: CompanyData) => {
     setEditingCompany(company);
     setFormData({
       name: company.name,
@@ -66,55 +96,64 @@ export default function Companies() {
     setOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    if (editingCompany) {
-      const updatedCompany: Company = {
-        ...editingCompany,
-        name: formData.name,
-        cgpaRequirement: parseFloat(formData.cgpaRequirement),
-        interviewDate: formData.interviewDate,
-        location: formData.location,
-        package: formData.package,
-        eligibleBranches: formData.eligibleBranches,
-      };
+    const companyData: CompanyData = {
+      id: editingCompany ? editingCompany.id : Date.now().toString(),
+      name: formData.name,
+      cgpaRequirement: parseFloat(formData.cgpaRequirement),
+      interviewDate: formData.interviewDate,
+      location: formData.location,
+      package: formData.package,
+      eligibleBranches: formData.eligibleBranches,
+    };
 
-      setCompanies((prev) =>
-        prev.map((c) => (c.id === editingCompany.id ? updatedCompany : c))
-      );
+    try {
+      await saveCompanyData(companyData);
 
-      toast.success("Company Updated", {
-        description: `${updatedCompany.name} has been updated successfully.`,
-      });
-    } else {
-      const newCompany: Company = {
-        id: Date.now().toString(),
-        name: formData.name,
-        cgpaRequirement: parseFloat(formData.cgpaRequirement),
-        interviewDate: formData.interviewDate,
-        location: formData.location,
-        package: formData.package,
-        eligibleBranches: formData.eligibleBranches,
-      };
-
-      setCompanies((prev) => [...prev, newCompany]);
-
-      toast.success("Company Added", {
-        description: `${newCompany.name} has been added successfully.`,
+      if (editingCompany) {
+        setCompanies((prev) =>
+          prev.map((c) => (c.id === editingCompany.id ? companyData : c))
+        );
+        toast.success("Company Updated", {
+          description: `${companyData.name} has been updated successfully.`,
+        });
+      } else {
+        setCompanies((prev) => [...prev, companyData]);
+        toast.success("Company Added", {
+          description: `${companyData.name} has been added successfully.`,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save company");
+    } finally {
+      setIsSubmitting(false);
+      setOpen(false);
+      setEditingCompany(null);
+      setFormData({
+        name: "",
+        cgpaRequirement: "",
+        interviewDate: "",
+        location: "",
+        package: "",
+        eligibleBranches: [],
       });
     }
+  };
 
-    setOpen(false);
-    setEditingCompany(null);
-    setFormData({
-      name: "",
-      cgpaRequirement: "",
-      interviewDate: "",
-      location: "",
-      package: "",
-      eligibleBranches: [],
-    });
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this company?")) return;
+    try {
+      await deleteCompanyData(id);
+      setCompanies((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Company Deleted");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete company");
+    }
   };
 
   return (
@@ -241,8 +280,13 @@ export default function Companies() {
               <Button
                 type="submit"
                 className="w-full"
+                disabled={isSubmitting}
               >
-                {editingCompany ? "Update Company" : "Add Company"}
+                {isSubmitting
+                  ? "Submitting..."
+                  : editingCompany
+                  ? "Update Company"
+                  : "Add Company"}
               </Button>
             </form>
           </DialogContent>
@@ -250,58 +294,71 @@ export default function Companies() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {companies.map((company) => (
-          <Card key={company.id}>
-            <CardHeader>
-              <CardTitle className="flex items-start justify-between">
-                <span>{company.name}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-normal text-muted-foreground">
-                    Min CGPA: {company.cgpaRequirement}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(company)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  {new Date(company.interviewDate).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>{company.location}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Briefcase className="h-4 w-4" />
-                <span>{company.package}</span>
-              </div>
-              <div className="pt-2">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Eligible Branches:
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {company.eligibleBranches.map((branch) => (
-                    <span
-                      key={branch}
-                      className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
-                    >
-                      {branch}
+        {isLoading ? (
+          <p className="text-center col-span-full">Loading companies...</p>
+        ) : companies.length === 0 ? (
+          <p className="text-center col-span-full">No companies available.</p>
+        ) : (
+          companies.map((company) => (
+            <Card key={company.id}>
+              <CardHeader>
+                <CardTitle className="flex items-start justify-between">
+                  <span>{company.name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Min CGPA: {company.cgpaRequirement}
                     </span>
-                  ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(company)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(company.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    {new Date(company.interviewDate).toLocaleDateString()}
+                  </span>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{company.location}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Briefcase className="h-4 w-4" />
+                  <span>{company.package}</span>
+                </div>
+                <div className="pt-2">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Eligible Branches:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {company.eligibleBranches.map((branch) => (
+                      <span
+                        key={branch}
+                        className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
+                      >
+                        {branch}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

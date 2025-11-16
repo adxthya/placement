@@ -32,7 +32,7 @@ export default function Students() {
     loadStudents();
   }, []);
 
-  if (loading) return <p>Loading students...</p>;
+  if (loading) return <p className="text-center">Loading students...</p>;
 
   return (
     <div className="space-y-6">
