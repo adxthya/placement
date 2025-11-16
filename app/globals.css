@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap");
-
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -143,19 +141,19 @@
 
 /* ---------------- Heading Styles ---------------- */
 .heading-xl {
-  @apply font-serif text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
 }
 
 .heading-lg {
-  @apply font-serif text-3xl md:text-4xl font-bold tracking-tight;
+  @apply text-3xl md:text-4xl font-bold tracking-tight;
 }
 
 .heading-md {
-  @apply font-serif text-2xl md:text-3xl font-semibold;
+  @apply text-2xl md:text-3xl font-semibold;
 }
 
 .heading-sm {
-  @apply font-serif text-xl md:text-2xl font-semibold;
+  @apply text-xl md:text-2xl font-semibold;
 }
 
 /* ---------------- Animation: Fade Up ---------------- */

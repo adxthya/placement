@@ -22,17 +22,19 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-college-primary"
-            >
-              <User
-                size={18}
-                className="mr-1"
-              />
-              <span>Profile</span>
-            </Button>
+            <Link href="/student/profile">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-college-primary"
+              >
+                <User
+                  size={18}
+                  className="mr-1"
+                />
+                <span>Profile</span>
+              </Button>
+            </Link>
             <Button
               size="sm"
               className="bg-primary hover:bg-primary/90"

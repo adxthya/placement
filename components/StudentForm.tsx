@@ -303,7 +303,6 @@ const StudentForm = () => {
                 >
                   {isSubmitting ? "Submitting..." : "Submit Information"}
                 </Button>
-
               </div>
             </form>
           </div>
