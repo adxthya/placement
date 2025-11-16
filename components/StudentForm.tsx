@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Upload, CheckCircle, AlertCircle } from "lucide-react";
 
 const branches = [
   "Computer Science",
@@ -33,10 +32,11 @@ const StudentForm = () => {
     cgpa: "",
     semester: "",
     branch: "",
+    universityId: "",
+    collegeId: "",
   });
-  const [file, setFile] = useState<File | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fileError, setFileError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,71 +47,35 @@ const StudentForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFileError("");
-    const selectedFile = e.target.files?.[0];
-
-    if (selectedFile) {
-      // Check file type
-      if (!selectedFile.name.endsWith(".pdf")) {
-        setFileError("Please upload a PDF file");
-        return;
-      }
-
-      // Check file size (max 2MB)
-      if (selectedFile.size > 2 * 1024 * 1024) {
-        setFileError("File size should be less than 2MB");
-        return;
-      }
-
-      setFile(selectedFile);
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsSubmitting(true);
 
-    // Simulate form submission
     setTimeout(() => {
       setIsSubmitting(false);
       toast("Submission successful", {
         description: "Your information has been successfully submitted.",
       });
 
-      // Reset form
       setFormData({
         name: "",
         email: "",
         cgpa: "",
         semester: "",
         branch: "",
+        universityId: "",
+        collegeId: "",
       });
-      setFile(null);
-
-      // Reset file input
-      const fileInput = document.getElementById("resume") as HTMLInputElement;
-      if (fileInput) fileInput.value = "";
     }, 1500);
   };
 
   const validateForm = () => {
-    // Validate CGPA
     const cgpaValue = parseFloat(formData.cgpa);
     if (isNaN(cgpaValue) || cgpaValue < 0 || cgpaValue > 10) {
       toast("Invalid CGPA", {
         description: "CGPA must be a number between 0 and 10",
-      });
-      return false;
-    }
-
-    // Validate file
-    if (!file) {
-      toast("Resume required", {
-        description: "Please upload your resume",
       });
       return false;
     }
@@ -132,9 +96,9 @@ const StudentForm = () => {
             </span>
             <h2 className="heading-lg mt-4 mb-3">Submit Your Information</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Complete the form below to submit your academic details and
-              resume. This helps us provide you with personalized opportunities
-              and resources.
+              Complete the form below to submit your academic details. This
+              helps us provide you with personalized opportunities and
+              resources.
             </p>
           </div>
 
@@ -147,6 +111,7 @@ const StudentForm = () => {
               className="space-y-6"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Full Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
@@ -160,6 +125,7 @@ const StudentForm = () => {
                   />
                 </div>
 
+                {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
@@ -174,6 +140,35 @@ const StudentForm = () => {
                   />
                 </div>
 
+                {/* University ID */}
+                <div className="space-y-2">
+                  <Label htmlFor="universityId">University ID</Label>
+                  <Input
+                    id="universityId"
+                    name="universityId"
+                    placeholder="Enter University ID"
+                    value={formData.universityId}
+                    onChange={handleInputChange}
+                    required
+                    className="h-12 border-gray-200 focus:border-college-primary focus:ring-college-primary/20"
+                  />
+                </div>
+
+                {/* College ID */}
+                <div className="space-y-2">
+                  <Label htmlFor="collegeId">College ID</Label>
+                  <Input
+                    id="collegeId"
+                    name="collegeId"
+                    placeholder="Enter College ID"
+                    value={formData.collegeId}
+                    onChange={handleInputChange}
+                    required
+                    className="h-12 border-gray-200 focus:border-college-primary focus:ring-college-primary/20"
+                  />
+                </div>
+
+                {/* CGPA */}
                 <div className="space-y-2">
                   <Label htmlFor="cgpa">CGPA (0-10)</Label>
                   <Input
@@ -188,6 +183,7 @@ const StudentForm = () => {
                   />
                 </div>
 
+                {/* Semester */}
                 <div className="space-y-2">
                   <Label htmlFor="semester">Current Semester</Label>
                   <Select
@@ -213,6 +209,7 @@ const StudentForm = () => {
                   </Select>
                 </div>
 
+                {/* Branch */}
                 <div className="space-y-2">
                   <Label htmlFor="branch">Branch/Department</Label>
                   <Select
@@ -236,62 +233,6 @@ const StudentForm = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="resume">Resume (PDF only)</Label>
-                  <div className="relative">
-                    <Input
-                      id="resume"
-                      name="resume"
-                      type="file"
-                      accept=".pdf"
-                      onChange={handleFileChange}
-                      required
-                      className="sr-only"
-                    />
-                    <Label
-                      htmlFor="resume"
-                      className={`flex items-center justify-center h-12 px-4 border ${
-                        file
-                          ? "border-green-500 bg-green-50"
-                          : fileError
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-200"
-                      } rounded-md cursor-pointer hover:bg-gray-50 transition-colors`}
-                    >
-                      {file ? (
-                        <>
-                          <CheckCircle
-                            size={18}
-                            className="mr-2 text-green-500"
-                          />
-                          <span className="text-green-700 truncate">
-                            {file.name}
-                          </span>
-                        </>
-                      ) : fileError ? (
-                        <>
-                          <AlertCircle
-                            size={18}
-                            className="mr-2 text-red-500"
-                          />
-                          <span className="text-red-700">{fileError}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Upload
-                            size={18}
-                            className="mr-2 text-gray-500"
-                          />
-                          <span className="text-gray-500">
-                            Upload Resume (PDF)
-                          </span>
-                        </>
-                      )}
-                    </Label>
-                  </div>
-                  <p className="text-xs text-gray-500">Max file size: 2MB</p>
                 </div>
               </div>
 

@@ -29,7 +29,13 @@ export default function RootLayout({
         className={`${bricolageSans.className} ${bricolageMono.className} antialiased`}
       >
         {children}
-        <Toaster />
+        <Toaster
+          toastOptions={{
+            classNames: {
+              description: "!text-gray-500",
+            },
+          }}
+        />
       </body>
     </html>
   );
