@@ -1,4 +1,6 @@
-import { mockStudents } from "@/data/mockData";
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,8 +10,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { fetchAllStudentsData } from "@/actions/addStudentData"; // you need to create this function
+import { StudentData } from "@/types/student";
 
 export default function Students() {
+  const [students, setStudents] = useState<StudentData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStudents() {
+      try {
+        const data = await fetchAllStudentsData();
+        setStudents(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadStudents();
+  }, []);
+
+  if (loading) return <p>Loading students...</p>;
+
   return (
     <div className="space-y-6">
       <div>
@@ -21,7 +45,7 @@ export default function Students() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Students ({mockStudents.length})</CardTitle>
+          <CardTitle>All Students ({students.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -36,8 +60,8 @@ export default function Students() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockStudents.map((student) => (
-                  <TableRow key={student.id}>
+                {students.map((student) => (
+                  <TableRow key={student.email}>
                     <TableCell className="font-medium">
                       {student.name}
                     </TableCell>

@@ -6,4 +6,5 @@ export type StudentData = {
   branch: string;
   universityId: string;
   collegeId: string;
+  createdAt?: string;
 };

@@ -1,5 +1,12 @@
 import { db, auth } from "@/lib/firebase";
-import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { StudentData } from "@/types/student";
 
 export async function saveStudentData(data: StudentData) {
@@ -49,4 +56,26 @@ export async function updateStudentData(data: StudentData): Promise<void> {
     ...data,
     updatedAt: new Date().toISOString(),
   });
+}
+
+export async function fetchAllStudentsData(): Promise<StudentData[]> {
+  const studentsRef = collection(db, "students");
+  const snapshot = await getDocs(studentsRef);
+  const data: StudentData[] = [];
+
+  snapshot.forEach((doc) => {
+    const student = doc.data();
+    data.push({
+      name: student.name,
+      email: student.email,
+      cgpa: Number(student.cgpa),
+      semester: Number(student.semester),
+      branch: student.branch,
+      universityId: student.universityId,
+      collegeId: student.collegeId,
+      createdAt: student.createdAt,
+    });
+  });
+
+  return data;
 }
