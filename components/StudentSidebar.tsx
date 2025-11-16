@@ -6,8 +6,8 @@ import { Briefcase, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/student/eligible", icon: Briefcase, label: "Eligible Interviews" },
   { href: "/student/profile", icon: User, label: "My Profile" },
+  { href: "/student/eligible", icon: Briefcase, label: "Eligible Interviews" },
 ];
 
 export function StudentSidebar() {

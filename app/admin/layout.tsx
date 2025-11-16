@@ -21,7 +21,7 @@ export default function AdminLayout({
               <SidebarTrigger />
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-6 w-6 text-primary" />
-                <h1 className="font-serif font-bold text-xl text-primary">
+                <h1 className="font-bold text-xl text-primary">
                   Admin Dashboard
                 </h1>
               </div>

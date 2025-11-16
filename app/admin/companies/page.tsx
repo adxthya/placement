@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Calendar, MapPin, Briefcase, Pencil } from "lucide-react";
-import { toast } from "sonner"; // ✅ using sonner
+import { toast } from "sonner";
 
 const branches = [
   "Computer Science",
@@ -121,9 +121,7 @@ export default function Companies() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-serif font-bold text-foreground">
-            Companies
-          </h2>
+          <h2 className="text-3xl font-bold text-foreground">Companies</h2>
           <p className="text-muted-foreground mt-1">
             Manage placement companies
           </p>

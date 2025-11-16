@@ -13,9 +13,7 @@ export default function Students() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-serif font-bold text-foreground">
-          Students
-        </h2>
+        <h2 className="text-3xl font-bold text-foreground">Students</h2>
         <p className="text-muted-foreground mt-1">
           View all registered students
         </p>

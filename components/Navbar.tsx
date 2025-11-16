@@ -23,6 +23,9 @@ const Navbar = () => {
     window.location.href = "/login"; // hard redirect so state resets
   };
 
+  // Another dumb stuff
+  const isAdmin = user?.email === "adithya222011@sahrdaya.ac.in"; // admin check
+
   return (
     <nav className="bg-glass py-3 border-b border-white/10 shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 md:px-6">
@@ -85,6 +88,17 @@ const Navbar = () => {
                       Profile
                     </Link>
                   </DropdownMenuItem>
+
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/admin/students"
+                        className="cursor-pointer"
+                      >
+                        Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
 
                   <DropdownMenuItem
                     onClick={handleLogout}
