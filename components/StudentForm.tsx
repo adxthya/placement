@@ -53,7 +53,11 @@ const StudentForm = () => {
     setIsSubmitting(true);
 
     try {
-      await saveStudentData(formData);
+      await await saveStudentData({
+        ...formData,
+        cgpa: Number(formData.cgpa),
+        semester: Number(formData.semester),
+      });
 
       toast("Submission successful", {
         description: "Your information has been successfully submitted.",

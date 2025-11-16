@@ -1,15 +1,6 @@
 import { db, auth } from "@/lib/firebase";
-import { collection, doc, setDoc } from "firebase/firestore";
-
-export type StudentData = {
-  name: string;
-  email: string; // student's actual form email
-  cgpa: string;
-  semester: string;
-  branch: string;
-  universityId: string;
-  collegeId: string;
-};
+import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { StudentData } from "@/types/student";
 
 export async function saveStudentData(data: StudentData) {
   const user = auth.currentUser;
@@ -25,6 +16,37 @@ export async function saveStudentData(data: StudentData) {
 
   await setDoc(studentDoc, {
     ...data,
+    cgpa: Number(data.cgpa),
+    semester: Number(data.semester),
     createdAt: new Date().toISOString(),
+  });
+}
+
+export async function fetchStudentData() {
+  const user = auth.currentUser;
+
+  if (!user || !user.email) {
+    throw new Error("User not logged in");
+  }
+
+  const docRef = doc(db, "students", user.email);
+  const snap = await getDoc(docRef);
+
+  if (!snap.exists()) {
+    throw new Error("Student profile not found");
+  }
+
+  return snap.data() as StudentData;
+}
+
+export async function updateStudentData(data: StudentData): Promise<void> {
+  const user = auth.currentUser;
+  if (!user || !user.email) throw new Error("Not logged in");
+
+  const ref = doc(db, "students", user.email);
+
+  await updateDoc(ref, {
+    ...data,
+    updatedAt: new Date().toISOString(),
   });
 }

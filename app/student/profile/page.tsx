@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { mockStudents } from "@/data/mockData";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,65 +15,85 @@ import {
 import { Pencil, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { StudentData } from "@/types/student";
+import { fetchStudentData } from "@/actions/addStudentData";
+import { updateStudentData } from "@/actions/addStudentData";
+
 const branches = [
   "Computer Science",
-  "Information Technology",
   "Electrical Engineering",
-  "Mechanical Engineering",
   "Civil Engineering",
+  "Electronics & Communication",
+  "Bio Medical Engineering",
+  "Biotechnology",
 ];
 
 const semesters = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
 export default function Profile() {
-  const [selectedStudentId, setSelectedStudentId] = useState(
-    mockStudents[0].id
-  );
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(mockStudents[0]);
+  const [formData, setFormData] = useState<StudentData | null>(null);
 
-  const currentStudent = mockStudents.find((s) => s.id === selectedStudentId);
-
-  const handleStudentChange = (studentId: string) => {
-    const student = mockStudents.find((s) => s.id === studentId);
-    if (student) {
-      setSelectedStudentId(studentId);
-      setFormData(student);
-      setIsEditing(false);
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchStudentData();
+        setFormData(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load profile");
+      }
     }
-  };
+    load();
+  }, []);
+
+  if (!formData) return <p>Loading...</p>;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "cgpa" || name === "semester" ? parseFloat(value) : value,
-    }));
+
+    setFormData((prev) =>
+      prev
+        ? {
+            ...prev,
+            [name]: name === "cgpa" ? Number(value) : value,
+          }
+        : prev
+    );
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "semester" ? parseInt(value) : value,
-    }));
+  const handleSelectChange = (name: keyof StudentData, value: string) => {
+    setFormData((prev) =>
+      prev
+        ? {
+            ...prev,
+            [name]: name === "semester" ? Number(value) : value,
+          }
+        : prev
+    );
   };
 
-  const handleSave = () => {
+  async function handleSave() {
+    if (!formData) return;
+
     if (formData.cgpa < 0 || formData.cgpa > 10) {
       toast.error("CGPA must be between 0 and 10");
       return;
     }
 
-    toast.success("Profile updated successfully!");
+    try {
+      await updateStudentData(formData);
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save changes");
+    }
+  }
 
+  function handleCancel() {
     setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    if (currentStudent) setFormData(currentStudent);
-    setIsEditing(false);
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -87,60 +106,40 @@ export default function Profile() {
           </p>
         </div>
 
-        <Select
-          value={selectedStudentId}
-          onValueChange={handleStudentChange}
-        >
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Select student" />
-          </SelectTrigger>
-          <SelectContent>
-            {mockStudents.map((student) => (
-              <SelectItem
-                key={student.id}
-                value={student.id}
-              >
-                {student.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!isEditing ? (
+          <Button
+            onClick={() => setIsEditing(true)}
+            size="sm"
+            variant="outline"
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSave}
+              size="sm"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+            <Button
+              onClick={handleCancel}
+              size="sm"
+              variant="outline"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Profile Card */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Personal Information</CardTitle>
-
-          {!isEditing ? (
-            <Button
-              onClick={() => setIsEditing(true)}
-              size="sm"
-              variant="outline"
-            >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-                size="sm"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-
-              <Button
-                onClick={handleCancel}
-                size="sm"
-                variant="outline"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
-          )}
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -191,7 +190,7 @@ export default function Profile() {
               <Label htmlFor="semester">Semester</Label>
               <Select
                 value={formData.semester.toString()}
-                onValueChange={(value) => handleSelectChange("semester", value)}
+                onValueChange={(v) => handleSelectChange("semester", v)}
                 disabled={!isEditing}
               >
                 <SelectTrigger id="semester">
@@ -215,7 +214,7 @@ export default function Profile() {
               <Label htmlFor="branch">Branch</Label>
               <Select
                 value={formData.branch}
-                onValueChange={(value) => handleSelectChange("branch", value)}
+                onValueChange={(v) => handleSelectChange("branch", v)}
                 disabled={!isEditing}
               >
                 <SelectTrigger id="branch">
