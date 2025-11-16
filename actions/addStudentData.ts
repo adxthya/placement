@@ -13,6 +13,12 @@ import {
 import { Student, StudentData } from "@/types/student";
 import { CompanyData } from "@/types/companyData";
 
+export type EligibilityStatus = {
+  companyId: string;
+  studentId: string;
+  status: "pending" | "eligible" | "rejected";
+};
+
 export async function saveStudentData(data: StudentData) {
   const user = auth.currentUser;
 
@@ -161,4 +167,14 @@ export async function getStudentStatuses() {
     map[`${d.companyId}-${d.studentId}`] = d.status;
   });
   return map;
+}
+
+export async function fetchEligibilityForStudent(
+  studentId: string
+): Promise<EligibilityStatus[]> {
+  const statusRef = collection(db, "eligibilityStatus");
+  const q = query(statusRef, where("studentId", "==", studentId));
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((docSnap) => docSnap.data() as EligibilityStatus);
 }

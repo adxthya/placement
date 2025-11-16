@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { mockCompanies, mockStudents } from "@/data/mockData";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, DollarSign, GraduationCap } from "lucide-react";
@@ -12,18 +12,72 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import {
+  fetchAllStudentsData,
+  fetchAllCompaniesData,
+  fetchEligibilityForStudent,
+  EligibilityStatus,
+} from "@/actions/addStudentData";
+
+import { Student } from "@/types/student";
+import { CompanyData } from "@/types/companyData";
+
 const EligibleInterviews = () => {
-  const [selectedStudentId, setSelectedStudentId] = useState(
-    mockStudents[0].id
+  const [students, setStudents] = useState<Student[]>([]);
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [eligibilities, setEligibilities] = useState<EligibilityStatus[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
+    null
   );
+  const [loading, setLoading] = useState(true);
 
-  const currentStudent = mockStudents.find((s) => s.id === selectedStudentId);
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
 
-  const eligibleCompanies = mockCompanies.filter(
-    (company) =>
-      currentStudent &&
-      currentStudent.cgpa >= company.cgpaRequirement &&
-      company.eligibleBranches.includes(currentStudent.branch)
+      const [fetchedStudents, fetchedCompanies] = await Promise.all([
+        fetchAllStudentsData(),
+        fetchAllCompaniesData(),
+      ]);
+
+      setStudents(fetchedStudents);
+      setCompanies(fetchedCompanies);
+      setSelectedStudentId(fetchedStudents[0]?.id || null);
+      setLoading(false);
+    }
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedStudentId) return;
+
+    async function loadEligibilities() {
+      const records = await fetchEligibilityForStudent(selectedStudentId!);
+      setEligibilities(records);
+    }
+
+    loadEligibilities();
+  }, [selectedStudentId]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-20 text-xl text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
+
+  const currentStudent =
+    students.find((s) => s.id === selectedStudentId) || null;
+
+  const eligibleCompanies = companies.filter((company) =>
+    eligibilities.some(
+      (record) =>
+        record.studentId === selectedStudentId &&
+        record.companyId === company.id &&
+        record.status === "eligible"
+    )
   );
 
   return (
@@ -36,14 +90,14 @@ const EligibleInterviews = () => {
           </p>
         </div>
         <Select
-          value={selectedStudentId}
-          onValueChange={setSelectedStudentId}
+          value={selectedStudentId || ""}
+          onValueChange={(val) => setSelectedStudentId(val)}
         >
           <SelectTrigger className="w-[250px]">
             <SelectValue placeholder="Select student" />
           </SelectTrigger>
           <SelectContent>
-            {mockStudents.map((student) => (
+            {students.map((student) => (
               <SelectItem
                 key={student.id}
                 value={student.id}
@@ -107,7 +161,7 @@ const EligibleInterviews = () => {
                   <span>Min CGPA: {company.cgpaRequirement}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {company.eligibleBranches.map((branch) => (
+                  {company.eligibleBranches.map((branch: string) => (
                     <Badge
                       key={branch}
                       variant="outline"
