@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { mockStudents, mockCompanies } from "@/data/mockData";
+import {
+  fetchAllStudentsData,
+  fetchAllCompaniesData,
+  saveStudentStatus,
+  getStudentStatuses,
+} from "@/actions/addStudentData";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -23,37 +29,101 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type Student = {
+  id: string;
+  name: string;
+  email: string;
+  branch: string;
+  semester: number;
+  cgpa: number;
+};
+
+type Company = {
+  id: string;
+  name: string;
+  cgpaRequirement: number;
+  eligibleBranches: string[];
+  interviewDate: string;
+  location: string;
+  package: string;
+};
+
 type StudentStatus = "pending" | "eligible" | "rejected";
 
 export default function EligibleStudents() {
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>(
-    mockCompanies[0]?.id || ""
-  );
-  const [studentStatuses, setStudentStatuses] = useState<
-    Record<string, StudentStatus>
-  >({});
+  const [students, setStudents] = useState<Student[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [statuses, setStatuses] = useState<Record<string, StudentStatus>>({});
+  const [loading, setLoading] = useState(true);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
 
-  const selectedCompany = mockCompanies.find((c) => c.id === selectedCompanyId);
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+
+      const [s, c, stRaw] = await Promise.all([
+        fetchAllStudentsData(),
+        fetchAllCompaniesData(),
+        getStudentStatuses(),
+      ]);
+
+      setStudents(s);
+      setCompanies(c);
+
+      // Cast statuses to proper type
+      const st: Record<string, StudentStatus> = {};
+      Object.keys(stRaw).forEach((key) => {
+        const value = stRaw[key];
+        if (
+          value === "eligible" ||
+          value === "rejected" ||
+          value === "pending"
+        ) {
+          st[key] = value;
+        } else {
+          st[key] = "pending"; // fallback
+        }
+      });
+      setStatuses(st);
+
+      setSelectedCompanyId(c[0]?.id || "");
+      setLoading(false);
+    }
+
+    load();
+  }, []);
+
+  const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
 
   const eligibleStudents = selectedCompany
-    ? mockStudents.filter(
+    ? students.filter(
         (student) =>
           student.cgpa >= selectedCompany.cgpaRequirement &&
           selectedCompany.eligibleBranches.includes(student.branch)
       )
     : [];
 
-  const handleStatusChange = (studentId: string, status: StudentStatus) => {
-    setStudentStatuses((prev) => ({
+  const getStatus = (studentId: string): StudentStatus => {
+    return statuses[`${selectedCompanyId}-${studentId}`] || "pending";
+  };
+
+  const handleStatusChange = async (
+    studentId: string,
+    status: StudentStatus
+  ) => {
+    await saveStudentStatus(selectedCompanyId, studentId, status);
+
+    setStatuses((prev) => ({
       ...prev,
       [`${selectedCompanyId}-${studentId}`]: status,
     }));
 
-    const student = mockStudents.find((s) => s.id === studentId);
+    const student = students.find((s) => s.id === studentId);
+
     toast(
       status === "eligible"
-        ? "✅ Student Marked Eligible"
-        : "❌ Student Marked Rejected",
+        ? "Student Marked Eligible"
+        : "Student Marked Rejected",
       {
         description: `${student?.name} has been marked as ${status}.`,
         duration: 3000,
@@ -61,9 +131,13 @@ export default function EligibleStudents() {
     );
   };
 
-  const getStudentStatus = (studentId: string): StudentStatus => {
-    return studentStatuses[`${selectedCompanyId}-${studentId}`] || "pending";
-  };
+  if (loading) {
+    return (
+      <div className="text-center py-20 text-xl text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -81,27 +155,25 @@ export default function EligibleStudents() {
           <CardTitle>Select Company</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <Label>Company</Label>
-            <Select
-              value={selectedCompanyId}
-              onValueChange={setSelectedCompanyId}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a company" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockCompanies.map((company) => (
-                  <SelectItem
-                    key={company.id}
-                    value={company.id}
-                  >
-                    {company.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Label>Company</Label>
+          <Select
+            value={selectedCompanyId}
+            onValueChange={setSelectedCompanyId}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a company" />
+            </SelectTrigger>
+            <SelectContent>
+              {companies.map((company) => (
+                <SelectItem
+                  key={company.id}
+                  value={company.id}
+                >
+                  {company.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {selectedCompany && (
             <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-2">
@@ -140,9 +212,11 @@ export default function EligibleStudents() {
                       <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
+
                   <TableBody>
                     {eligibleStudents.map((student) => {
-                      const status = getStudentStatus(student.id);
+                      const status = getStatus(student.id);
+
                       return (
                         <TableRow key={student.id}>
                           <TableCell className="font-medium">
@@ -154,10 +228,9 @@ export default function EligibleStudents() {
                             {student.semester}
                           </TableCell>
                           <TableCell className="text-center">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {student.cgpa}
-                            </span>
+                            {student.cgpa}
                           </TableCell>
+
                           <TableCell className="text-center">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -168,20 +241,16 @@ export default function EligibleStudents() {
                                   : "bg-yellow-100 text-yellow-800"
                               }`}
                             >
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                              {status}
                             </span>
                           </TableCell>
+
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 size="sm"
                                 variant={
                                   status === "eligible" ? "default" : "outline"
-                                }
-                                style={
-                                  status === "eligible"
-                                    ? { backgroundColor: "#00C853" }
-                                    : {}
                                 }
                                 onClick={() =>
                                   handleStatusChange(student.id, "eligible")
@@ -190,6 +259,7 @@ export default function EligibleStudents() {
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
+
                               <Button
                                 size="sm"
                                 variant={
@@ -214,7 +284,7 @@ export default function EligibleStudents() {
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                No students meet the eligibility criteria for this company.
+                No students meet this company’s eligibility criteria.
               </div>
             )}
           </CardContent>

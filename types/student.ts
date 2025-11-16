@@ -8,3 +8,7 @@ export type StudentData = {
   collegeId: string;
   createdAt?: string;
 };
+
+export type Student = StudentData & {
+  id: string; // Firestore document ID
+};

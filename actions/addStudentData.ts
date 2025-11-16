@@ -5,10 +5,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
-import { StudentData } from "@/types/student";
+import { Student, StudentData } from "@/types/student";
 import { CompanyData } from "@/types/companyData";
 
 export async function saveStudentData(data: StudentData) {
@@ -60,14 +62,17 @@ export async function updateStudentData(data: StudentData): Promise<void> {
   });
 }
 
-export async function fetchAllStudentsData(): Promise<StudentData[]> {
+export async function fetchAllStudentsData(): Promise<Student[]> {
   const studentsRef = collection(db, "students");
   const snapshot = await getDocs(studentsRef);
-  const data: StudentData[] = [];
 
-  snapshot.forEach((doc) => {
-    const student = doc.data();
+  const data: Student[] = [];
+
+  snapshot.forEach((docSnap) => {
+    const student = docSnap.data();
+
     data.push({
+      id: docSnap.id, // doc id from Firestore
       name: student.name,
       email: student.email,
       cgpa: Number(student.cgpa),
@@ -81,7 +86,6 @@ export async function fetchAllStudentsData(): Promise<StudentData[]> {
 
   return data;
 }
-
 // Save or update a company
 export async function saveCompanyData(data: CompanyData) {
   const companiesRef = collection(db, "companies");
@@ -117,9 +121,44 @@ export async function fetchAllCompaniesData(): Promise<CompanyData[]> {
   return data;
 }
 
-export async function deleteCompanyData(id: string) {
-  if (!id) throw new Error("Invalid company ID");
+export async function deleteCompanyData(companyId: string) {
+  if (!companyId) throw new Error("Invalid company ID");
 
-  const companyDocRef = doc(db, "companies", id);
+  // Delete the company document
+  const companyDocRef = doc(db, "companies", companyId);
   await deleteDoc(companyDocRef);
+
+  // Delete all related eligibilityStatus documents
+  const statusRef = collection(db, "eligibilityStatus");
+  const q = query(statusRef, where("companyId", "==", companyId));
+  const snapshot = await getDocs(q);
+
+  const deletePromises = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
+  await Promise.all(deletePromises);
+}
+
+export async function saveStudentStatus(
+  companyId: string,
+  studentId: string,
+  status: string
+) {
+  const ref = doc(db, "eligibilityStatus", `${companyId}-${studentId}`);
+
+  await setDoc(ref, {
+    companyId,
+    studentId,
+    status,
+    updatedAt: new Date(),
+  });
+}
+
+// Fetch eligibility statuses
+export async function getStudentStatuses() {
+  const snap = await getDocs(collection(db, "eligibilityStatus"));
+  const map: Record<string, string> = {};
+  snap.docs.forEach((doc) => {
+    const d = doc.data();
+    map[`${d.companyId}-${d.studentId}`] = d.status;
+  });
+  return map;
 }
