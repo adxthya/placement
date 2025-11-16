@@ -1,10 +1,16 @@
 "use client";
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { StudentSidebar } from "@/components/StudentSidebar";
 import AuthGuard from "@/components/AuthGuard";
+import Navbar from "@/components/Navbar";
 
 export default function StudentLayout({
   children,
@@ -13,6 +19,7 @@ export default function StudentLayout({
 }) {
   return (
     <AuthGuard>
+      <Navbar />
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <aside className="hidden w-64 border-r bg-card md:block">
@@ -35,6 +42,7 @@ export default function StudentLayout({
                 side="left"
                 className="w-64 p-0"
               >
+                <SheetTitle className="sr-only">menu</SheetTitle>
                 <StudentSidebar />
               </SheetContent>
             </Sheet>
