@@ -178,6 +178,11 @@ export default function EligibleStudents() {
                                 variant={
                                   status === "eligible" ? "default" : "outline"
                                 }
+                                style={
+                                  status === "eligible"
+                                    ? { backgroundColor: "#00C853" }
+                                    : {}
+                                }
                                 onClick={() =>
                                   handleStatusChange(student.id, "eligible")
                                 }

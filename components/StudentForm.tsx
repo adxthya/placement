@@ -11,15 +11,14 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { saveStudentData } from "@/actions/addStudentData";
 
 const branches = [
   "Computer Science",
-  "Information Technology",
   "Electrical Engineering",
-  "Mechanical Engineering",
   "Civil Engineering",
   "Electronics & Communication",
-  "Chemical Engineering",
+  "Bio Medical Engineering",
   "Biotechnology",
 ];
 
@@ -47,14 +46,15 @@ const StudentForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await saveStudentData(formData);
+
       toast("Submission successful", {
         description: "Your information has been successfully submitted.",
       });
@@ -68,7 +68,14 @@ const StudentForm = () => {
         universityId: "",
         collegeId: "",
       });
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast("Error submitting data", {
+        description: "Something went wrong while saving your info.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const validateForm = () => {
