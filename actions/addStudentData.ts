@@ -53,7 +53,7 @@ export async function fetchStudentData() {
     throw new Error("Student profile not found");
   }
 
-  return snap.data() as StudentData;
+  return snap.data() as Student;
 }
 
 export async function updateStudentData(data: StudentData): Promise<void> {

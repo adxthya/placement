@@ -1,19 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, DollarSign, GraduationCap } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import {
-  fetchAllStudentsData,
+  fetchStudentData,
   fetchAllCompaniesData,
   fetchEligibilityForStudent,
   EligibilityStatus,
@@ -23,42 +18,40 @@ import { Student } from "@/types/student";
 import { CompanyData } from "@/types/companyData";
 
 const EligibleInterviews = () => {
-  const [students, setStudents] = useState<Student[]>([]);
+  const [student, setStudent] = useState<Student | null>(null);
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [eligibilities, setEligibilities] = useState<EligibilityStatus[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
-    null
-  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadData() {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
 
-      const [fetchedStudents, fetchedCompanies] = await Promise.all([
-        fetchAllStudentsData(),
-        fetchAllCompaniesData(),
-      ]);
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-      setStudents(fetchedStudents);
+      const std = await fetchStudentData();
+      if (!std) {
+        setLoading(false);
+        return;
+      }
+
+      setStudent(std);
+
+      const fetchedCompanies = await fetchAllCompaniesData();
       setCompanies(fetchedCompanies);
-      setSelectedStudentId(fetchedStudents[0]?.id || null);
-      setLoading(false);
-    }
 
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedStudentId) return;
-
-    async function loadEligibilities() {
-      const records = await fetchEligibilityForStudent(selectedStudentId!);
+      // FIX: Use user.email instead of std.id (std.id does not exist)
+      const records = await fetchEligibilityForStudent(user.email!);
       setEligibilities(records);
-    }
 
-    loadEligibilities();
-  }, [selectedStudentId]);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   if (loading) {
     return (
@@ -68,68 +61,45 @@ const EligibleInterviews = () => {
     );
   }
 
-  const currentStudent =
-    students.find((s) => s.id === selectedStudentId) || null;
+  if (!student) {
+    return (
+      <div className="text-center py-20 text-xl text-muted-foreground">
+        No student profile found.
+      </div>
+    );
+  }
 
   const eligibleCompanies = companies.filter((company) =>
     eligibilities.some(
       (record) =>
-        record.studentId === selectedStudentId &&
-        record.companyId === company.id &&
-        record.status === "eligible"
+        record.companyId === company.id && record.status === "eligible"
     )
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Eligible Interviews</h1>
-          <p className="text-muted-foreground">
-            View all placement opportunities you&apos;re eligible for
-          </p>
-        </div>
-        <Select
-          value={selectedStudentId || ""}
-          onValueChange={(val) => setSelectedStudentId(val)}
-        >
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Select student" />
-          </SelectTrigger>
-          <SelectContent>
-            {students.map((student) => (
-              <SelectItem
-                key={student.id}
-                value={student.id}
-              >
-                {student.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <h1 className="text-3xl font-bold">Eligible Interviews</h1>
+      <p className="text-muted-foreground">
+        Placement opportunities based on your profile
+      </p>
 
-      {currentStudent && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Your Details</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">CGPA: {currentStudent.cgpa}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">{currentStudent.branch}</Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">
-                Semester {currentStudent.semester}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Your Details</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">CGPA: {student.cgpa}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{student.branch}</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Semester {student.semester}</span>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         {eligibleCompanies.length > 0 ? (
@@ -146,20 +116,24 @@ const EligibleInterviews = () => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <span className="font-semibold">{company.package}</span>
                 </div>
+
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>
                     {new Date(company.interviewDate).toLocaleDateString()}
                   </span>
                 </div>
+
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span>{company.location}</span>
                 </div>
+
                 <div className="flex items-center gap-2 text-sm">
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
                   <span>Min CGPA: {company.cgpaRequirement}</span>
                 </div>
+
                 <div className="flex flex-wrap gap-2 mt-2">
                   {company.eligibleBranches.map((branch: string) => (
                     <Badge
@@ -177,7 +151,7 @@ const EligibleInterviews = () => {
           <Card className="col-span-full">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground">
-                No eligible interviews found based on your current profile.
+                No eligible interviews found.
               </p>
             </CardContent>
           </Card>

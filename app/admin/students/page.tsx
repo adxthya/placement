@@ -61,7 +61,7 @@ export default function Students() {
               </TableHeader>
               <TableBody>
                 {students.map((student) => (
-                  <TableRow key={student.email}>
+                  <TableRow key={student.createdAt}>
                     <TableCell className="font-medium">
                       {student.name}
                     </TableCell>
