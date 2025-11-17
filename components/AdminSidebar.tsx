@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Building2, CheckCircle } from "lucide-react";
+import { Users, Building2, CheckCircle, Home } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 
 import {
@@ -19,6 +19,7 @@ const menuItems = [
   { title: "Students", href: "/admin/students", icon: Users },
   { title: "Companies", href: "/admin/companies", icon: Building2 },
   { title: "Eligible Students", href: "/admin/eligible", icon: CheckCircle },
+  { title: "Home", href: "/", icon: Home },
 ];
 
 export function AdminSidebar() {

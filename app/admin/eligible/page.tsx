@@ -255,7 +255,11 @@ export default function EligibleStudents() {
                                 onClick={() =>
                                   handleStatusChange(student.id, "eligible")
                                 }
-                                disabled={status === "eligible"}
+                                style={
+                                  status == "eligible"
+                                    ? { background: "#22c55e" }
+                                    : {}
+                                }
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
