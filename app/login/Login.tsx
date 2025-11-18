@@ -31,9 +31,6 @@ const Login = () => {
           </div>
           <h1 className="font-bold text-2xl text-foreground">Student Portal</h1>
           <p className="text-sm text-muted-foreground">Sign in to continue</p>
-          <p className="text-muted-foreground">
-            Sahrdaya College of Engineering and Technology
-          </p>
         </div>
 
         <Button

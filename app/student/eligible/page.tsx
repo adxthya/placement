@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, DollarSign, GraduationCap } from "lucide-react";
+import { Calendar, MapPin, IndianRupeeIcon, GraduationCap } from "lucide-react";
 
 import {
   fetchStudentData,
@@ -113,7 +113,7 @@ const EligibleInterviews = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <IndianRupeeIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="font-semibold">{company.package}</span>
                 </div>
 
