@@ -21,15 +21,6 @@ Built using **Next.js**, **Firebase Auth**, **Firestore**, and **ShadCN UI**.
 
 ---
 
-## Preview Video
-
-Add your UI walkthrough video link here:  
-`https://youtu.be/your-preview-video`
-
----
-
-
-
 ## Setup
 
 Clone the project:
@@ -63,3 +54,18 @@ bun run dev
 4. Firestore
 5. ShadCN UI
 6. TailwindCSS
+
+---
+
+## Images
+<img width="1710" height="909" alt="Screenshot 2025-11-18 at 5 21 24 PM" src="https://github.com/user-attachments/assets/62882339-54ed-467a-a5a5-cd725265c074" />
+
+<img width="1710" height="909" alt="Screenshot 2025-11-18 at 5 21 40 PM" src="https://github.com/user-attachments/assets/63e105e6-968e-4555-b141-6d59f6c3de00" />
+
+<img width="1710" height="909" alt="Screenshot 2025-11-18 at 5 21 51 PM" src="https://github.com/user-attachments/assets/0fcc13a5-7568-4225-bb4a-222a7b3d30cf" />
+
+<img width="1710" height="909" alt="Screenshot 2025-11-18 at 5 22 00 PM" src="https://github.com/user-attachments/assets/f78655e2-af70-42f3-8d69-82e3e9ea692d" />
+
+<img width="1710" height="909" alt="Screenshot 2025-11-18 at 5 22 09 PM" src="https://github.com/user-attachments/assets/84d141d8-8334-4619-9ed7-3c48a7678655" />
+
+
