@@ -1,4 +1,4 @@
-# Student Placement Eligibility Portal
+# Placement Portal
 
 A simple web app that shows a logged-in student which company interviews they are eligible for.  
 Built using **Next.js**, **Firebase Auth**, **Firestore**, and **ShadCN UI**.
@@ -15,7 +15,7 @@ Built using **Next.js**, **Firebase Auth**, **Firestore**, and **ShadCN UI**.
 
 ---
 
-## Demo 
+## Demo Website
 
 [Placement](https://placement-kappa.vercel.app/)
 
@@ -54,6 +54,16 @@ bun run dev
 4. Firestore
 5. ShadCN UI
 6. TailwindCSS
+
+---
+
+## Preview Video
+
+
+
+https://github.com/user-attachments/assets/1f0f2741-1d0f-4a4a-86e1-25922c689a56
+
+
 
 ---
 
